@@ -176,8 +176,8 @@ def extract_invoice_data(image_data: bytes, api_key: str, filename: str,
         try:
             data = json.loads(response_text)
             
-            # Check if we got any data
-            null_count = sum(1 for v in data.values() if v is None or v == '')
+            # Check if we got any data (only check for None, empty string is valid)
+            null_count = sum(1 for v in data.values() if v is None)
             total_fields = len(data)
             
             if null_count == total_fields:
@@ -188,7 +188,7 @@ def extract_invoice_data(image_data: bytes, api_key: str, filename: str,
             elif null_count > 0:
                 # Some fields are null
                 result['status'] = 'partial'
-                missing_fields = [k for k, v in data.items() if v is None or v == '']
+                missing_fields = [k for k, v in data.items() if v is None]
                 result['error_message'] = f"Missing fields: {', '.join(missing_fields)}"
                 result['data'] = data
             else:
@@ -447,7 +447,7 @@ def create_excel_report(results: List[Dict], output_path: str, status_callback=N
             try:
                 if cell.value:
                     max_length = max(max_length, len(str(cell.value)))
-            except:
+            except (TypeError, AttributeError):
                 pass
         adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
         ws.column_dimensions[column_letter].width = adjusted_width
